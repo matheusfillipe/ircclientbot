@@ -113,9 +113,13 @@ def fetch_irc_updates(c):
                         c.bot.send_message(chat_id=id, text=f"*{msg['nick']}:* {msg['text']}",
                                            parse_mode='Markdown', reply_to_message_id=client.lastMessageId)
                     else:
-                        s="\*"
+                        s={
+                            "*": "\*",
+                            "_": "\_",
+                            "`": "\`",
+                           }
                         c.bot.send_message(
-                            chat_id=id, text=f"*{msg['nick']}:* {msg['text'].replace('*',s)}", parse_mode='Markdown')
+                            chat_id=id, text=f"*{msg['nick']}:* {''.join([s[c] if c in s else c for c in list(msg['text'])])}", parse_mode='Markdown')
         except Exception as e:
             c.bot.send_message(
                 chat_id=id, text=f"*You were disconected:* "+str(e), parse_mode='Markdown')
