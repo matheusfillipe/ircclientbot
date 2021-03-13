@@ -20,7 +20,7 @@ class IrcClient():
         client.send(f"NICK {name}\r\n \
                      USER {name} 0 * :{name}\r\n \
                      JOIN {channel}\r\n \
-                     PRIVMSG NickServ :set always-on truer\n".encode())
+                     PRIVMSG NickServ :set always-on true\r\n".encode())
         self.host = host
         self.port = port
         self.channel = channel
@@ -50,7 +50,7 @@ class IrcClient():
 
 
         IRC_P = {
-            r'^:(.*)!.*PRIVMSG (.*) :(.*)$': lambda g: {"nick": g.group(1), "channel": g.group(2), "text": g.group(3)},
+            r'^:(.*)!.*PRIVMSG (\S+) :(.*)$': lambda g: {"nick": g.group(1), "channel": g.group(2), "text": g.group(3)},
             r'^\s*PING \s*' + self.name + r'\s*$': lambda g: {"ping": self.name},
             r'^:\S* 353 '+self.name+r' = '+self.channel+r' :(.*)\s*$': lambda g: {"names": g.group(1).split()},
             r'^:\S* 322 '+self.name+r' (\S+) (\d+) :(.+)\s*$': lambda g: {"channel": g.group(1), "chandescription": g.group(3), "count": g[2]},
