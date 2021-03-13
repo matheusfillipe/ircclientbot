@@ -56,12 +56,11 @@ def save(u, c):
         return
     name = args[0]
     client = users[c.user_data['id']]
-    if ('saved' in c.user_data and not name in c.user_data['saved']) or not 'saved' in c.user_data:
-        if not 'saved' in c.user_data:
-            c.user_data['saved'] = {}
-        c.user_data['saved'][name] = {
-            'host': client.host, 'name': client.name, 'port': client.port, 'channel': client.channel}
-        send(c, u, f"Saved {name}!")
+    if not 'saved' in c.user_data:
+        c.user_data['saved'] = {}
+    c.user_data['saved'][name] = {
+        'host': client.host, 'name': client.name, 'port': client.port, 'channel': client.channel}
+    send(c, u, f"Saved {name}!")
 
 
 def load(u, c):
