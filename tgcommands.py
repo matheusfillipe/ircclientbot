@@ -1,6 +1,8 @@
 import logging
 import re
 from ircclient import ircJoin, ircDisconnect, send
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
 from users import UsersList
 users = UsersList()
 
@@ -41,9 +43,7 @@ def emote(u, c):
 
 
 def stats(u, c):
-    send(c, u, str(c.user_data))
-
-
+    send(c, u, str(users[c.user_data['id']]))
 
 
 def save(u, c):
@@ -62,18 +62,34 @@ def save(u, c):
         c.user_data['saved'][name] = {
             'host': client.host, 'name': client.name, 'port': client.port, 'channel': client.channel}
         send(c, u, f"Saved {name}!")
-    else:
-        send(c, u, "You already used that name, please choose another one")
 
 
 def load(u, c):
     args = u.message.text.split()[1:]
-    if len(args) == 0:
-        send(c, u, "Please, specify a name to load from")
-        return
-    name = args[0]
+
     if not 'saved' in c.user_data:
-        send(c, u, "You don't have anything saved yet")
+        send(c, u, "You don't have any config saved yet")
+        return
+
+    if len(args) == 0:
+        i=0
+        button_list = []
+        for save in c.user_data['saved']:
+            obj = c.user_data['saved'][save]
+            if i%2==0:
+                button_list.append([])
+            button_list[-1].append(InlineKeyboardButton(str(save)+": "+"; ".join(
+                       [str(obj[k]) for k in obj])[:35], callback_data="load_"+save))
+            i+=1
+        reply_markup = InlineKeyboardMarkup(button_list)
+        id = u.effective_chat.id
+        c.bot.send_message(chat_id=id, text= "Please, specify a name to load from. Available ones are:", reply_markup=reply_markup,
+                           parse_mode='Markdown')
+        return
+
+    name = args[0]
+    if not name in c.user_data['saved']:
+        send(c, u, "You don't have any save under that name")
         return
     try:
         ircDisconnect(c)
@@ -81,7 +97,7 @@ def load(u, c):
         pass
     client = c.user_data['saved'][name]
     send(c,u,str(client))
-    ircJoin(u, c, client['host'], client['port'], client['channel'])
+    ircJoin(u, c, client['host'], client['port'], client['channel'], client['name'])
 
 
 def listusers(u, c):
@@ -177,3 +193,10 @@ def button(u, c):
         client.send_raw(f"PART {client.channel}")
         users[c.user_data['id']].channel = name
         send(c, u, "*You are now on a PM with* " + client.channel)
+
+    if data.startswith("load_"):
+        name = args[-1]
+        client = c.user_data['saved'][name]
+        send(c,u,str(client))
+        ircJoin(u, c, client['host'], client['port'], client['channel'], client['name'], c.user_data['id'])
+

@@ -33,6 +33,9 @@ def runTgBot(commands_dict):
         c.bot.send_message(chat_id=u.effective_chat.id, text="""
             Welcome! Get started!""" + "\n\n" + help_msg)
 
+    def unknown(u, c):
+        c.bot.send_message(chat_id=u.effective_chat.id, text="_Unknown Command!_", parse_mode='Markdown')
+
     updater = Updater(token=API_KEY,
               persistence=my_persistence, use_context=True)
     dispatcher = updater.dispatcher
@@ -54,6 +57,7 @@ def runTgBot(commands_dict):
     echo_handler = MessageHandler(Filters.text & (~Filters.command), bridge)
     dispatcher.add_handler(echo_handler)
     updater.dispatcher.add_handler(CallbackQueryHandler(button))
+    dispatcher.add_handler(MessageHandler(Filters.command, unknown))
 
     updater.bot.set_my_commands(descriptions)
     aps_logger = logging.getLogger('apscheduler')

@@ -28,6 +28,9 @@ class IrcClient():
         self.client = client
         self.lastMessageId = None
 
+    def __str__(self):
+        return f"host: {self.host}\nport: {self.port}\nnick: {self.name}\nchannel: {self.channel}"
+
     def send(self, m):
         """
         sends a private message to the channel or user PM if you pass a nickname
@@ -116,6 +119,7 @@ def fetch_irc_updates(c):
             c.bot.send_message(
                 chat_id=id, text=f"*You were disconected:* "+str(e), parse_mode='Markdown')
             remove.append(id)
+
     for i in remove:
         try:
             del users[id]
@@ -124,12 +128,12 @@ def fetch_irc_updates(c):
             pass
 
 
-def ircJoin(u, c, host, port=6667, channel='#lobby'):
+def ircJoin(u, c, host, port=6667, channel='#lobby', nick = None, uid = None):
     c.user_data['host'] = host
     c.user_data['port'] = port
     channel = c.user_data['channel'] = channel
-    nick = c.user_data['nick'] = "TG-"+u.message.from_user.first_name
-    c.user_data['id'] = u.message.from_user.id
+    nick = c.user_data['nick'] = "TG-"+u.message.from_user.first_name if nick is None else nick
+    c.user_data['id'] = u.message.from_user.id if uid is None else uid
     logging.info("Connecting")
     try:
         logging.info(
