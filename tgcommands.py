@@ -1,4 +1,5 @@
 import logging
+import re
 from ircclient import ircJoin, ircDisconnect, send
 from users import UsersList
 users = UsersList()
@@ -44,22 +45,6 @@ def stats(u, c):
     send(c, u, str(c.user_data))
 
 
-def bridge(u, c):
-    global users
-    logging.info("---------------------------------------")
-    # or (c.user_data['id'] in users and not users[c.user_data['id']]['on']):
-    if not c.user_data['id'] in users:
-        send(c, u, "You are not connected to any irc")
-        return
-    try:
-        client = users[c.user_data['id']]
-        client.send(u.message.text)
-    except:
-        send(c, u, "You were disconnected! Connect again")
-        try:
-            del users[c.user_data['id']]
-        except:
-            pass
 
 
 def save(u, c):
@@ -131,3 +116,44 @@ def privmsg(u, c):
     client.send_raw(f"PART {client.channel}")
     users[c.user_data['id']].channel = name
     send(c, u, "*You are now on a PM with* " + client.channel)
+
+def nick(u, c):
+    args = u.message.text.split()[1:]
+    if len(args) == 0:
+        send(c, u, "Please, specify a new nickname")
+        return
+    name = args[0]
+    if not c.user_data['id'] in users:
+        send(c, u, "You are not connected to any irc")
+        return
+    client = users[c.user_data['id']]
+    client.send_raw(f"NICK {name}")
+
+def bridge(u, c):
+    global users
+    logging.info("---------------------------------------")
+    if not c.user_data['id'] in users:
+        send(c, u, "You are not connected to any irc")
+        return
+    try:
+        if u.message:
+            client = users[c.user_data['id']]
+            msg="    ".join(u.message.text.split("\n"))
+            if u.message.reply_to_message:
+                reply_to = u.message.reply_to_message.text
+                m = re.match(r'^(\S+:) .*$', reply_to)
+                if m and m[1]:
+                    msg = m[1]+" "+msg
+            client.send(msg)
+            client.lastMessageId = u.message.message_id
+        if u.edited_message:
+            client = users[c.user_data['id']]
+            msg="    ".join(u.edited_message.text.split("\n"))
+            client.send(msg)
+
+    except:
+        send(c, u, "You were disconnected! Connect again")
+        try:
+            del users[c.user_data['id']]
+        except:
+            pass

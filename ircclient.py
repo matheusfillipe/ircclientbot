@@ -23,6 +23,7 @@ class IrcClient():
         self.channel = channel
         self.name = name
         self.client = client
+        self.lastMessageId = None
 
     def send(self, m):
         """
@@ -40,13 +41,20 @@ class IrcClient():
         """
         This is a work in progress... pass in a number like 3 or 4 and send some messages
         """
+
+
         IRC_P = {
             r'^:(.*)!.*PRIVMSG (.*) :(.*)$': lambda g: {"nick": g.group(1), "channel": g.group(2), "text": g.group(3)},
             r'^\s*PING \s*' + self.name + r'\s*$': lambda g: {"ping": self.name},
             r'^:.* 353 '+self.name+r' = '+self.channel+r' :(.*)\s*$': lambda g: {"names": g.group(1).split()},
             r'^:.* 322 '+self.name+r' (.+) 1 :(.+)\s*$': lambda g: {"channel": g.group(1), "chandescription": g.group(2)},
-        }
-
+            r'^:(.+)!.* QUIT :(.*)\s*$': lambda g:{'reply': f"`{g[1]}` has quit  {g[2]}"},
+            r'^:(.+)!.* JOIN (\S+)\s*$': lambda g:{'reply':  f"`{g[1]}` has joined  {g[2]}"},
+            r'^:(.+)!.* PART (\S+)\s*$': lambda g:{'reply':  f"`{g[1]}` has left  {g[2]}"},
+            r'^:(.+) 433 (\S*) (\S*) :(.*)\s*$': lambda g:{'reply':  f"*{g[1]}*"},
+            r'^:'+self.name+'!.* QUIT (.*)\s*$': lambda g:{'reply':  f"*{g[1]}: You have quit*"},
+            r'^:'+self.name+'!.* NICK (\S+)\s*$': lambda g:{'nickchange': g[1], 'reply': f"*You are now known as {g[1]}*"},
+        } 
         return list(
             map(lambda g: IRC_P[g.re.pattern](g),
                 filter(lambda m: m,
@@ -67,6 +75,8 @@ def fetch_irc_updates(c):
             client = users[id]
             msgs = client.recv()
             for msg in msgs:
+                if "nickchange" in msg:
+                    client.name = msg["nickchange"]
                 if 'ping' in msg:
                     client.send_raw("PONG " + client.host)
                     logging.info("Ping request: PONGING")
@@ -80,9 +90,18 @@ def fetch_irc_updates(c):
                     text = f"*{msg['channel']}:* {msg['chandescription']}"
                     c.bot.send_message(chat_id=id, text=text,
                                        parse_mode='Markdown')
+                elif "reply" in msg:
+                    c.bot.send_message(chat_id=id, text=msg['reply'],
+                                       parse_mode='Markdown')
                 else:
-                    c.bot.send_message(
-                        chat_id=id, text=f"*{msg['nick']}:* {msg['text']}", parse_mode='Markdown')
+                    logging.info(client.lastMessageId)
+                    if client.name in msg['text'] and client.lastMessageId:
+                        logging.info("--000000000000000000000000000000-- REPLYING")
+                        c.bot.send_message(chat_id=id, text=f"*{msg['nick']}:* {msg['text']}",
+                                           parse_mode='Markdown', reply_to_message_id=client.lastMessageId)
+                    else:
+                        c.bot.send_message(
+                            chat_id=id, text=f"*{msg['nick']}:* {msg['text']}", parse_mode='Markdown')
         except Exception as e:
             c.bot.send_message(
                 chat_id=id, text=f"*You were disconected:* "+str(e), parse_mode='Markdown')

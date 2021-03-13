@@ -1,7 +1,8 @@
-#!/bin/python3
 #TODOS
-#refactor so i have a single place to add commands
+#Save and load that works
 #add buttons for user PM and for channel join
+#ssl support
+
 
 from env import API_KEY
 from ircclient import IrcClient, fetch_irc_updates
@@ -54,6 +55,8 @@ def runTgBot(commands_dict):
     echo_handler = MessageHandler(Filters.text & (~Filters.command), bridge)
     dispatcher.add_handler(echo_handler)
     updater.bot.set_my_commands(descriptions)
+    aps_logger = logging.getLogger('apscheduler')
+    aps_logger.setLevel(logging.WARNING)
     job_queue = updater.job_queue
     job_queue.run_repeating(fetch_irc_updates, timedelta(seconds=1))
 
