@@ -117,6 +117,8 @@ def fetch_irc_updates(c):
                             "*": "\*",
                             "_": "\_",
                             "`": "\`",
+                            "[": "\[`",
+                            "]": "\]`",
                            }
                         c.bot.send_message(
                             chat_id=id, text=f"*{msg['nick']}:* {''.join([s[c] if c in s else c for c in list(msg['text'])])}", parse_mode='Markdown')
