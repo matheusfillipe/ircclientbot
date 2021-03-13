@@ -1,12 +1,11 @@
 #TODOS
 #Save and load that works
-#add buttons for user PM and for channel join
 #ssl support
 
 
 from env import API_KEY
 from ircclient import IrcClient, fetch_irc_updates
-from tgcommands import bridge
+from tgcommands import bridge, button
 
 
 import logging
@@ -14,7 +13,7 @@ from datetime import timedelta
 
 from telegram.ext import MessageHandler, Filters
 from telegram import InlineQueryResultArticle, InputTextMessageContent
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, InlineQueryHandler, PollAnswerHandler, PollHandler, PicklePersistence, Job
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, InlineQueryHandler, PicklePersistence, Job, CallbackQueryHandler, CallbackContext
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Poll, BotCommand
 
 
@@ -54,6 +53,8 @@ def runTgBot(commands_dict):
 
     echo_handler = MessageHandler(Filters.text & (~Filters.command), bridge)
     dispatcher.add_handler(echo_handler)
+    updater.dispatcher.add_handler(CallbackQueryHandler(button))
+
     updater.bot.set_my_commands(descriptions)
     aps_logger = logging.getLogger('apscheduler')
     aps_logger.setLevel(logging.WARNING)

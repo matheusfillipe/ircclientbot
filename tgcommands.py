@@ -21,7 +21,6 @@ def join(u, c):
     channel = c.user_data['channel'] = args[0]
     client = users[c.user_data['id']]
     client.send_raw(f"PART {client.channel}")
-    logging.info("JOINING-----------------------------------"+channel)
     users[c.user_data['id']].channel = c.user_data['channel'] = channel
     client.send_raw(f"JOIN {channel}")
     send(c, u, f"You are now on {channel}")
@@ -157,3 +156,24 @@ def bridge(u, c):
             del users[c.user_data['id']]
         except:
             pass
+
+def button(u, c):
+    query = u.callback_query
+    query.answer()
+    data = query.data
+    args = data.split("_")
+
+    if data.startswith("channel_"):
+        client = users[c.user_data['id']]
+        client.send_raw(f"PART {client.channel}")
+        channel = args[-1]
+        users[c.user_data['id']].channel = c.user_data['channel'] = channel
+        client.send_raw(f"JOIN {channel}")
+        send(c, u, f"You are now on {channel}")
+
+    if data.startswith("nick_"):
+        name = args[-1]
+        client = users[c.user_data['id']]
+        client.send_raw(f"PART {client.channel}")
+        users[c.user_data['id']].channel = name
+        send(c, u, "*You are now on a PM with* " + client.channel)

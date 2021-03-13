@@ -3,11 +3,14 @@ from functools import reduce
 import logging
 import re
 
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
 def send(c, u, msg):
     c.bot.send_message(chat_id=u.effective_chat.id,
                        text=msg, parse_mode='Markdown')
 
 from users import UsersList
+from telegram import InlineKeyboardButton
 users = UsersList()
 
 class IrcClient():
@@ -46,8 +49,8 @@ class IrcClient():
         IRC_P = {
             r'^:(.*)!.*PRIVMSG (.*) :(.*)$': lambda g: {"nick": g.group(1), "channel": g.group(2), "text": g.group(3)},
             r'^\s*PING \s*' + self.name + r'\s*$': lambda g: {"ping": self.name},
-            r'^:.* 353 '+self.name+r' = '+self.channel+r' :(.*)\s*$': lambda g: {"names": g.group(1).split()},
-            r'^:.* 322 '+self.name+r' (.+) 1 :(.+)\s*$': lambda g: {"channel": g.group(1), "chandescription": g.group(2)},
+            r'^:\S* 353 '+self.name+r' = '+self.channel+r' :(.*)\s*$': lambda g: {"names": g.group(1).split()},
+            r'^:\S* 322 '+self.name+r' (\S+) (\d+) :(.+)\s*$': lambda g: {"channel": g.group(1), "chandescription": g.group(3), "count": g[2]},
             r'^:(.+)!.* QUIT :(.*)\s*$': lambda g:{'reply': f"`{g[1]}` has quit  {g[2]}"},
             r'^:(.+)!.* JOIN (\S+)\s*$': lambda g:{'reply':  f"`{g[1]}` has joined  {g[2]}"},
             r'^:(.+)!.* PART (\S+)\s*$': lambda g:{'reply':  f"`{g[1]}` has left  {g[2]}"},
@@ -81,22 +84,29 @@ def fetch_irc_updates(c):
                     client.send_raw("PONG " + client.host)
                     logging.info("Ping request: PONGING")
                 elif 'names' in msg:
-                    text = f"*{client.channel}*\n\n"
+                    button_list = []
+                    text = f"*Users on {client.channel}*"
+                    i=0
                     for n in msg['names']:
-                        text += "`"+n+"    `"
-                    c.bot.send_message(chat_id=id, text=text,
+                        if i%2==0:
+                            button_list.append([])
+                        button_list[-1].append(InlineKeyboardButton(n, callback_data="nick_"+n))
+                        i+=1
+                    reply_markup = InlineKeyboardMarkup(button_list)
+                    c.bot.send_message(chat_id=id, text=text, reply_markup=reply_markup,
                                        parse_mode='Markdown')
+
                 elif "chandescription" in msg:
-                    text = f"*{msg['channel']}:* {msg['chandescription']}"
-                    c.bot.send_message(chat_id=id, text=text,
+                    text = f"*{msg['channel']} {msg['count']}:* {msg['chandescription']}"
+                    button_list = [[InlineKeyboardButton(msg['channel'], callback_data="channel_"+msg['channel'])]]
+                    reply_markup = InlineKeyboardMarkup(button_list)
+                    c.bot.send_message(chat_id=id, text=text, reply_markup=reply_markup,
                                        parse_mode='Markdown')
                 elif "reply" in msg:
                     c.bot.send_message(chat_id=id, text=msg['reply'],
                                        parse_mode='Markdown')
                 else:
-                    logging.info(client.lastMessageId)
                     if client.name in msg['text'] and client.lastMessageId:
-                        logging.info("--000000000000000000000000000000-- REPLYING")
                         c.bot.send_message(chat_id=id, text=f"*{msg['nick']}:* {msg['text']}",
                                            parse_mode='Markdown', reply_to_message_id=client.lastMessageId)
                     else:
