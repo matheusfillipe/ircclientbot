@@ -61,7 +61,7 @@ def runTgBot(commands_dict):
 
     updater.bot.set_my_commands(descriptions)
     aps_logger = logging.getLogger('apscheduler')
-    aps_logger.setLevel(logging.WARNING)
+    aps_logger.setLevel(logging.ERROR)
     job_queue = updater.job_queue
     job_queue.run_repeating(fetch_irc_updates, timedelta(seconds=1))
 
