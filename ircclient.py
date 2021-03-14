@@ -4,6 +4,7 @@ import logging
 import re
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.error import BadRequest
 
 def send(c, u, msg):
     c.bot.send_message(chat_id=u.effective_chat.id,
@@ -110,22 +111,24 @@ def fetch_irc_updates(c):
                                        parse_mode='Markdown')
                 else:
                     if client.name in msg['text'] and client.lastMessageId:
-                        c.bot.send_message(chat_id=id, text=f"*{msg['nick']}:* {msg['text']}",
-                                           parse_mode='Markdown', reply_to_message_id=client.lastMessageId)
+                        try:
+                            c.bot.send_message(chat_id=id, text=f"<b>{msg['nick']}:</b> {msg['text']}",
+                                               parse_mode='HTML', reply_to_message_id=client.lastMessageId)
+                        except BadRequest:
+                            c.bot.send_message(chat_id=id, text=f"{msg['nick']}: {msg['text']}",
+                                               reply_to_message_id=client.lastMessageId)
                     else:
-                        s={
-                            "*": "\*",
-                            "_": "\_",
-                            "`": "\`",
-                            "[": "\[`",
-                            "]": "\]`",
-                           }
-                        c.bot.send_message(
-                            chat_id=id, text=f"*{msg['nick']}:* {''.join([s[c] if c in s else c for c in list(msg['text'])])}", parse_mode='Markdown')
+                        try:
+                            c.bot.send_message(
+                                chat_id=id, text=f"<b>{msg['nick']}:</b> {msg['text']}", parse_mode='HTML')
+                        except BadRequest:
+                            c.bot.send_message(
+                                chat_id=id, text=f"{msg['nick']}: {msg['text']}")
+
         except Exception as e:
-            c.bot.send_message(
-                chat_id=id, text=f"*You were disconected:* "+str(e), parse_mode='Markdown')
-            remove.append(id)
+                c.bot.send_message(
+                    chat_id=id, text=f"*You were disconected:* "+str(e), parse_mode='Markdown')
+                remove.append(id)
 
     for i in remove:
         try:
