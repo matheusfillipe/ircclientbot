@@ -2,9 +2,18 @@ import logging
 import re
 from ircclient import ircJoin, ircDisconnect, send
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from env import CLIENT_ID
+import pyimgur
 
 from users import UsersList
 users = UsersList()
+
+def pastebin(text):
+    import requests
+    url = "http://ix.io"
+    payload={'f:1=<-': text}
+    response = requests.request("POST", url, data=payload)
+    return response.text
 
 
 def connect(u, c):
@@ -150,8 +159,19 @@ def bridge(u, c):
         send(c, u, "You are not connected to any irc")
         return
     try:
+        client = users[c.user_data['id']]
         if u.message:
-            client = users[c.user_data['id']]
+            mt = u.message.text_markdown
+            logging.info(mt)
+            r = re.match(r'`(.*)`', mt, flags=re.DOTALL)
+            logging.info(r)
+            if r:
+                markdown = r[1]
+                url = pastebin(u.message.text)
+                client.send(url)
+                send(c,u,url)
+                return
+
             msg="    ".join(u.message.text.split("\n"))
             if u.message.reply_to_message:
                 reply_to = u.message.reply_to_message.text
@@ -161,7 +181,6 @@ def bridge(u, c):
             client.send(msg)
             client.lastMessageId = u.message.message_id
         if u.edited_message:
-            client = users[c.user_data['id']]
             msg="    ".join(u.edited_message.text.split("\n"))
             client.send(msg)
 
@@ -199,3 +218,26 @@ def button(u, c):
         send(c,u,str(client))
         ircJoin(u, c, client['host'], client['port'], client['channel'], client['name'], c.user_data['id'])
 
+
+def image_handler(u,c):
+    if not c.user_data['id'] in users:
+        send(c, u, "You are not connected to any irc")
+        return
+    msg=u.message
+    if msg.photo:
+        file_id=msg.photo[-1].file_id
+    else:
+        logging.info("Wrong photo data")
+        return
+
+    newFile = c.bot.get_file(file_id)
+    filename="/tmp/"+file_id
+    newFile.download(filename)
+
+    im = pyimgur.Imgur(CLIENT_ID)
+    uploaded_image = im.upload_image(filename, title=u.message.text if hasattr(u.message, "text") else "Uploaded by https://t.me/ircclientbot")
+    logging.info("Uploaded image")
+
+    client = users[c.user_data['id']]
+    send(c,u,uploaded_image.link)
+    client.send(uploaded_image.link)

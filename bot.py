@@ -1,11 +1,10 @@
 #TODOS
-#Save and load that works
 #ssl support
 
 
 from env import API_KEY
 from ircclient import IrcClient, fetch_irc_updates
-from tgcommands import bridge, button
+from tgcommands import bridge, button, image_handler
 
 
 import logging
@@ -55,6 +54,7 @@ def runTgBot(commands_dict):
 
 
     echo_handler = MessageHandler(Filters.text & (~Filters.command), bridge)
+    dispatcher.add_handler(MessageHandler(Filters.photo, image_handler))
     dispatcher.add_handler(echo_handler)
     updater.dispatcher.add_handler(CallbackQueryHandler(button))
     dispatcher.add_handler(MessageHandler(Filters.command, unknown))
