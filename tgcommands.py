@@ -19,9 +19,12 @@ def pastebin(text):
 def connect(u, c):
     args = u.message.text.split()[1:]
     if len(args) == 0:
-        send(c, u, "Please specify a hostname and a port(defaults to 6667)")
+        send(c, u, "Please specify a hostname and a port(defaults to 6667) a nick(default none) and a password(default none)")
         return
-    ircJoin(u, c, str(args[0]), int(args[1]) if len(args) > 1 else 6667)
+    port = int(args[1]) if len(args) > 1 else 6667
+    nick = str(args[2]) if len(args) > 2 else None
+    password = str(args[3]) if len(args) > 3 else None
+    ircJoin(u, c, str(args[0]), port, nick=nick, password=password, ssl=False if port == 6667 else True)
 
 
 def join(u, c):
@@ -68,7 +71,7 @@ def save(u, c):
     if not 'saved' in c.user_data:
         c.user_data['saved'] = {}
     c.user_data['saved'][name] = {
-        'host': client.host, 'name': client.name, 'port': client.port, 'channel': client.channel}
+        'host': client.host, 'name': client.name, 'port': client.port, 'channel': client.channel, 'password': client.password, 'ssl': client.ssl}
     send(c, u, f"Saved {name}!")
 
 
@@ -104,8 +107,8 @@ def load(u, c):
     except:
         pass
     client = c.user_data['saved'][name]
-    send(c,u,str(client))
-    ircJoin(u, c, client['host'], client['port'], client['channel'], client['name'])
+    send(c,u,str({'host': client['host'], 'name': client['name'], 'channel': client['channel']}))
+    ircJoin(u, c, client['host'], client['port'], client['channel'], client['name'], password=client['password'], ssl=client['ssl'])
 
 
 def listusers(u, c):
@@ -216,7 +219,7 @@ def button(u, c):
         name = args[-1]
         client = c.user_data['saved'][name]
         send(c,u,str(client))
-        ircJoin(u, c, client['host'], client['port'], client['channel'], client['name'], c.user_data['id'])
+        ircJoin(u, c, client['host'], client['port'], client['channel'], client['name'], c.user_data['id'], password=client['password'], ssl=client['ssl'])
 
 
 def image_handler(u,c):

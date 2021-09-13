@@ -10,6 +10,7 @@ from tgcommands import bridge, button, image_handler
 import logging
 from datetime import timedelta
 
+
 from telegram.ext import MessageHandler, Filters
 from telegram import InlineQueryResultArticle, InputTextMessageContent
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, InlineQueryHandler, PicklePersistence, Job, CallbackQueryHandler, CallbackContext
@@ -25,7 +26,6 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 
 def runTgBot(commands_dict):
-
     help_msg = ""
 
     def start(u, c):
@@ -63,7 +63,7 @@ def runTgBot(commands_dict):
     aps_logger = logging.getLogger('apscheduler')
     aps_logger.setLevel(logging.ERROR)
     job_queue = updater.job_queue
-    job_queue.run_repeating(fetch_irc_updates, timedelta(seconds=1))
+    job_queue.run_repeating(fetch_irc_updates, timedelta(seconds=.1))
 
     updater.start_polling()
     updater.idle()
