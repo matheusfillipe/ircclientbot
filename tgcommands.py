@@ -51,7 +51,7 @@ def emote(u, c):
     if len(args) == 0:
         return
     client = users[c.user_data['id']]
-    client.send_raw(f"PRIVMSG {client.channel} :ACTION {' '.join(args)}")
+    client.send_raw(f"PRIVMSG {client.channel} :\x01ACTION {' '.join(args)}\x01")
 
 
 def stats(u, c):

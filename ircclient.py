@@ -3,6 +3,7 @@ import ssl
 from functools import reduce
 import logging
 import re
+import time
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import BadRequest
@@ -26,6 +27,7 @@ class IrcClient():
             client.connect((host, port))
         
         terminator = "\r\n"
+        client.settimeout(0.2)
         client.send(f"{f'PASS {password}' + terminator if password else ''}\
                      NICK {name}\r\n \
                      USER {name} 0 * :{name}\r\n \
@@ -56,13 +58,15 @@ class IrcClient():
         """
         return self.client.send(f"{m}\r\n".encode())
 
-    def recv(self, n=1):
+    def recv(self):
         """
-        This is a work in progress... pass in a number like 3 or 4 and send some messages
+        Receive irc messages and return list.
         """
 
 
         IRC_P = {
+            r'^:(.+)!.* PRIVMSG '+self.channel+'\s+:\x01ACTION (.+)\x01$': 
+                lambda g:{'reply':  f"*{g[1]} {g[2]}*"},
             r'^:(.*)!.*PRIVMSG (\S+) :(.*)$': lambda g: {"nick": g.group(1), "channel": g.group(2), "text": g.group(3)},
             r'^\s*PING \s*' + self.name + r'\s*$': lambda g: {"ping": self.name},
             r'^\s*PING \s*' + self.nick + r'\s*$': lambda g: {"ping": self.nick},
@@ -77,11 +81,15 @@ class IrcClient():
             r'^:'+self.nick+'!.* NICK (\S+)\s*$': lambda g:{'nickchange': g[1], 'reply': f"*You are now known as {g[1]}*"},
         } 
         received = []
-        for _ in range(n):
-            recv = self.client.recv(4096).decode('utf-8').split("\r\n")
-            if recv[0]:
-                print("<<<<", recv)
-            received.append(recv)
+        while 1:
+            try:
+                recv = self.client.recv(4096).decode('utf-8').split("\r\n")
+                received.append(recv)
+            except socket.timeout:
+                break
+
+        if any([any(x) for x in received]):
+            print("<<<<", received)
         if received:
             return list(
                 map(lambda g: IRC_P[g.re.pattern](g),
