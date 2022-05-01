@@ -70,7 +70,7 @@ class IrcClient():
             r'^:(.*)!.*PRIVMSG (\S+) :(.*)$': lambda g: {"nick": g.group(1), "channel": g.group(2), "text": g.group(3)},
             r'^\s*PING \s*' + self.name + r'\s*$': lambda g: {"ping": self.name},
             r'^\s*PING \s*' + self.nick + r'\s*$': lambda g: {"ping": self.nick},
-            r'^\s*PING \s*:(.+)\s*$': lambda g: {"ping": g[1]},
+            r'^\s*PING \s*:(.+)\s*$': lambda g: {"ping": g[1], "cookie": g[1]},
             r'^:\S* 353 '+self.nick+r' = '+self.channel+r' :(.*)\s*$': lambda g: {"names": g.group(1).split()},
             r'^:\S* 322 '+self.nick+r' (\S+) (\d+) :(.+)\s*$': lambda g: {"channel": g.group(1), "chandescription": g.group(3), "count": g[2]},
             r'^:(.+)!.* QUIT :(.*)\s*$': lambda g:{'reply': f"`{g[1]}` has quit  {g[2]}"},
@@ -115,7 +115,10 @@ def fetch_irc_updates(c):
                 if "nickchange" in msg:
                     client.nick = msg["nickchange"]
                 if 'ping' in msg:
-                    client.send_raw("PONG " + client.host)
+                    if "cookie" in msg:
+                        client.send_raw("PONG :" + msg['cookie'])
+                    else:
+                        client.send_raw("PONG " + client.host)
                     logging.info("Ping request: PONGING")
                 elif 'names' in msg:
                     button_list = []
