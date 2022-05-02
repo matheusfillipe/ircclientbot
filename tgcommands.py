@@ -1,7 +1,9 @@
 import logging
 import re
+import tempfile
 
 import pyimgur
+import requests
 from cachetools import TTLCache, cached
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -12,7 +14,6 @@ from users import UsersList
 users = UsersList()
 
 def pastebin(text):
-    import requests
     url = "http://ix.io"
     payload={'f:1=<-': text}
     response = requests.request("POST", url, data=payload)
@@ -280,3 +281,46 @@ def image_delete(u, c):
     except Exception as e:
         logging.error(e)
         u.message.reply_text("Sorry, something went wrong trying to delete that :(")
+
+def upload_file(file):
+    url = "http://ttm.sh"
+    payload = {'file': open(file, "rb")}
+    response = requests.request("POST", url, files=payload)
+    return response.text.strip()
+
+def document_handler(u, c):
+    if not c.user_data['id'] in users:
+        send(c, u, "You are not connected to any irc")
+        return
+    msg = u.message
+    url = None
+    file = None
+    filename = "file"
+    if msg.document:
+        file = c.bot.get_file(msg.document)
+        filename = msg.document.file_name
+    elif msg.voice:
+        file = c.bot.get_file(msg.voice.file_id)
+        filename = "audio.mp3"
+    elif msg.audio:
+        file = c.bot.get_file(msg.audio.file_id)
+        filename = "audio.mp3"
+    elif msg.video:
+        file = c.bot.get_file(msg.video.file_id)
+        filename = "video.mp4"
+
+    if file:
+        if file.file_size > 256 * 1024 * 1000:
+            msg.reply_text("Sorry but your file is too big and can't be uploaded. The limit is 256 mb.")
+            return
+        with tempfile.NamedTemporaryFile(suffix="." + filename.split(".")[-1]) as f:
+        # with open("/tmp/checkthis.ico", "wb") as f:
+            file.download(out=f)
+            logging.info("Downloaded to: " + f.name)
+            url = upload_file(f.name)
+    if url:
+        client = users[c.user_data['id']]
+        client.send(url)
+        send(c, u, url)
+    else:
+        send(c, u, "Failed to upload!")

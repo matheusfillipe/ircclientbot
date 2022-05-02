@@ -11,7 +11,7 @@ from telegram.ext import (CallbackContext, CallbackQueryHandler,
 
 from env import API_KEY
 from ircclient import IrcClient, fetch_irc_updates
-from tgcommands import bridge, button, image_handler
+from tgcommands import bridge, button, image_handler, document_handler
 
 my_persistence = PicklePersistence(filename='data', store_user_data=True,
                                    store_chat_data=True, store_bot_data=True, single_file=False)
@@ -50,6 +50,10 @@ def runTgBot(commands_dict):
 
     echo_handler = MessageHandler(Filters.text & (~Filters.command), bridge)
     dispatcher.add_handler(MessageHandler(Filters.photo, image_handler))
+    dispatcher.add_handler(MessageHandler(Filters.document, document_handler))
+    dispatcher.add_handler(MessageHandler(Filters.audio, document_handler))
+    dispatcher.add_handler(MessageHandler(Filters.video, document_handler))
+    dispatcher.add_handler(MessageHandler(Filters.voice, document_handler))
     dispatcher.add_handler(echo_handler)
     updater.dispatcher.add_handler(CallbackQueryHandler(button))
     dispatcher.add_handler(MessageHandler(Filters.command, unknown))
