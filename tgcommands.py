@@ -43,6 +43,16 @@ def join(u, c):
     send(c, u, f"You are now on {channel}")
 
 
+def quote(u, c):
+    args = u.message.text.split()[1:]
+    quote = " ".join(args)
+    if not c.user_data['id'] in users:
+        send(c, u, "You are not connected to any irc")
+        return
+    client = users[c.user_data['id']]
+    client.send_raw(quote)
+
+
 def emote(u, c):
     args = u.message.text.split()[1:]
     global users
