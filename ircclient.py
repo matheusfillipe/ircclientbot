@@ -192,7 +192,8 @@ def ircJoin(u, c, host, port=6667, channel='#lobby', nick = None, uid = None, pa
     except Exception as e:
         print("!!!!!!!!!!!!!!!")
         print(e)
-        send(c, u, "Unale to connect!")
+        send(c, u, "Unable to connect!")
+        send(c, u, str(e))
         try:
             del users[c.user_data['id']]
         except:
