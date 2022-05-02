@@ -1,3 +1,4 @@
-python-telegram-bot 
-pyimgur
-requests
+python-telegram-bot==13.4.1
+pyimgur==0.6.0
+cachetools==4.2.1
+requests==2.25.0

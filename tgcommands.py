@@ -1,11 +1,14 @@
 import logging
 import re
-from ircclient import ircJoin, ircDisconnect, send
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from env import CLIENT_ID
-import pyimgur
 
+import pyimgur
+from cachetools import TTLCache, cached
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
+from env import CLIENT_ID
+from ircclient import ircDisconnect, ircJoin, send
 from users import UsersList
+
 users = UsersList()
 
 def pastebin(text):
@@ -243,4 +246,27 @@ def image_handler(u,c):
 
     client = users[c.user_data['id']]
     send(c,u,uploaded_image.link)
+    if "imgurls" not in c.user_data:
+        c.user_data["imgurls"] = TTLCache(maxsize=128, ttl=172800)
+    iid = uploaded_image.id
+    c.user_data["imgurls"][iid] = uploaded_image
     client.send(uploaded_image.link)
+
+def image_delete(u, c):
+    logging.error("Is this even called")
+    args = u.message.text.split()[1:]
+    if len(args) < 1:
+        u.message.reply_text("You must pass an url to this command")
+        return
+    url = args[0]
+    iid = url.split("/")[-1].split(".")[0]
+    if "imgurls" not in c.user_data or iid not in c.user_data["imgurls"]:
+        u.message.reply_text("I am sorry but you either have sent no message, that is an invalid url/id or your image is past the 48 hours limit")
+        return
+    try:
+        c.user_data["imgurls"][iid].delete()
+        del c.user_data["imgurls"][iid]
+        u.message.reply_text("Image deleted successfully!")
+    except Exception as e:
+        logging.error(e)
+        u.message.reply_text("Sorry, something went wrong trying to delete that :(")

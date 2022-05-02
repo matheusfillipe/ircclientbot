@@ -1,22 +1,17 @@
-#TODOS
-#ssl support
-
-
-from env import API_KEY
-from ircclient import IrcClient, fetch_irc_updates
-from tgcommands import bridge, button, image_handler
 
 
 import logging
 from datetime import timedelta
 
+from telegram import (BotCommand, InlineKeyboardButton, InlineKeyboardMarkup,
+                      InlineQueryResultArticle, InputTextMessageContent, Poll)
+from telegram.ext import (CallbackContext, CallbackQueryHandler,
+                          CommandHandler, Filters, InlineQueryHandler, Job,
+                          MessageHandler, PicklePersistence, Updater)
 
-from telegram.ext import MessageHandler, Filters
-from telegram import InlineQueryResultArticle, InputTextMessageContent
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, InlineQueryHandler, PicklePersistence, Job, CallbackQueryHandler, CallbackContext
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Poll, BotCommand
-
-
+from env import API_KEY
+from ircclient import IrcClient, fetch_irc_updates
+from tgcommands import bridge, button, image_handler
 
 my_persistence = PicklePersistence(filename='data', store_user_data=True,
                                    store_chat_data=True, store_bot_data=True, single_file=False)

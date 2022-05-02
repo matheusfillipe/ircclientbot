@@ -10,6 +10,7 @@ commands_dict = [
     {"cmd": "list", "func": listchannels, "desc": "List channels in server"},
     {"cmd": "msg", "func": privmsg, "desc": "Start a PM chat with a user"},
     {"cmd": "me", "func": emote, "desc": "Emotes in the chat"},
+    {"cmd": "imgdel", "func": image_delete, "desc": "Removes image from imgur by passing the url or id. You can only remove images earlier than 48 hours."},
     {"cmd": "stats", "func": stats, "desc": "Your current connection information."},
     {"cmd": "save", "func": save, "desc": "Save your current channel and server as a name"},
     {"cmd": "load", "func": load, "desc": "Loads saved channel"},
