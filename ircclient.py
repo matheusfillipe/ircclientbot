@@ -4,6 +4,7 @@ from functools import reduce
 import logging
 import re
 import time
+from sys import getsizeof
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import BadRequest

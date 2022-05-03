@@ -308,6 +308,9 @@ def document_handler(u, c):
     elif msg.video:
         file = c.bot.get_file(msg.video.file_id)
         filename = "video.mp4"
+    elif msg.video_note:
+        file = c.bot.get_file(msg.video_note.file_id)
+        filename = "video.mp4"
 
     if file:
         if file.file_size > 256 * 1024 * 1000:

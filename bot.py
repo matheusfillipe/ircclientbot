@@ -54,6 +54,7 @@ def runTgBot(commands_dict):
     dispatcher.add_handler(MessageHandler(Filters.audio, document_handler))
     dispatcher.add_handler(MessageHandler(Filters.video, document_handler))
     dispatcher.add_handler(MessageHandler(Filters.voice, document_handler))
+    dispatcher.add_handler(MessageHandler(Filters.video_note, document_handler))
     dispatcher.add_handler(echo_handler)
     updater.dispatcher.add_handler(CallbackQueryHandler(button))
     dispatcher.add_handler(MessageHandler(Filters.command, unknown))
@@ -62,7 +63,7 @@ def runTgBot(commands_dict):
     aps_logger = logging.getLogger('apscheduler')
     aps_logger.setLevel(logging.ERROR)
     job_queue = updater.job_queue
-    job_queue.run_repeating(fetch_irc_updates, timedelta(seconds=.1))
+    job_queue.run_repeating(fetch_irc_updates, timedelta(seconds=0.1))
 
     updater.start_polling()
     updater.idle()
