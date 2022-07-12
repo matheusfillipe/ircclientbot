@@ -13,9 +13,10 @@ from users import UsersList
 
 users = UsersList()
 
+
 def pastebin(text):
     url = "http://ix.io"
-    payload={'f:1=<-': text}
+    payload = {'f:1=<-': text}
     response = requests.request("POST", url, data=payload)
     return response.text
 
@@ -28,7 +29,8 @@ def connect(u, c):
     port = int(args[1]) if len(args) > 1 else 6667
     nick = str(args[2]) if len(args) > 2 else None
     password = str(args[3]) if len(args) > 3 else None
-    ircJoin(u, c, str(args[0]), port, nick=nick, password=password, ssl=False if port == 6667 else True)
+    ircJoin(u, c, str(args[0]), port, nick=nick,
+            password=password, ssl=False if port == 6667 else True)
 
 
 def join(u, c):
@@ -65,7 +67,8 @@ def emote(u, c):
     if len(args) == 0:
         return
     client = users[c.user_data['id']]
-    client.send_raw(f"PRIVMSG {client.channel} :\x01ACTION {' '.join(args)}\x01")
+    client.send_raw(
+        f"PRIVMSG {client.channel} :\x01ACTION {' '.join(args)}\x01")
 
 
 def stats(u, c):
@@ -89,6 +92,21 @@ def save(u, c):
     send(c, u, f"Saved {name}!")
 
 
+def delete(u, c):
+    args = u.message.text.split()[1:]
+    if len(args) == 0:
+        send(c, u, "Please, specify a name to delete")
+        return
+
+    name = args[0]
+    if name not in c.user_data['saved']:
+        send(c, u, "You don't have any save under that name")
+        return
+
+    del c.user_data['saved'][name]
+    send(c, u, "Deleted " + name + " successfully!")
+
+
 def load(u, c):
     args = u.message.text.split()[1:]
 
@@ -97,18 +115,18 @@ def load(u, c):
         return
 
     if len(args) == 0:
-        i=0
+        i = 0
         button_list = []
         for save in c.user_data['saved']:
             obj = c.user_data['saved'][save]
-            if i%2==0:
+            if i % 2 == 0:
                 button_list.append([])
             button_list[-1].append(InlineKeyboardButton(str(save)+": "+"; ".join(
                        [str(obj[k]) for k in obj])[:35], callback_data="load_"+save))
-            i+=1
+            i += 1
         reply_markup = InlineKeyboardMarkup(button_list)
         id = u.effective_chat.id
-        c.bot.send_message(chat_id=id, text= "Please, specify a name to load from. Available ones are:", reply_markup=reply_markup,
+        c.bot.send_message(chat_id=id, text="Please, specify a name to load from. Available ones are:", reply_markup=reply_markup,
                            parse_mode='Markdown')
         return
 
@@ -121,8 +139,10 @@ def load(u, c):
     except:
         pass
     client = c.user_data['saved'][name]
-    send(c,u,str({'host': client['host'], 'name': client['name'], 'channel': client['channel']}))
-    ircJoin(u, c, client['host'], client['port'], client['channel'], client['name'], password=client['password'], ssl=client['ssl'])
+    send(c, u, str(
+        {'host': client['host'], 'name': client['name'], 'channel': client['channel']}))
+    ircJoin(u, c, client['host'], client['port'], client['channel'],
+            client['name'], password=client['password'], ssl=client['ssl'])
 
 
 def listusers(u, c):
@@ -157,6 +177,7 @@ def privmsg(u, c):
     users[c.user_data['id']].channel = name
     send(c, u, "*You are now on a PM with* " + client.channel)
 
+
 def nick(u, c):
     args = u.message.text.split()[1:]
     if len(args) == 0:
@@ -168,6 +189,7 @@ def nick(u, c):
         return
     client = users[c.user_data['id']]
     client.send_raw(f"NICK {name}")
+
 
 def bridge(u, c):
     global users
@@ -186,10 +208,10 @@ def bridge(u, c):
                 markdown = r[1]
                 url = pastebin(u.message.text)
                 client.send(url)
-                send(c,u,url)
+                send(c, u, url)
                 return
 
-            msg="    ".join(u.message.text.split("\n"))
+            msg = "    ".join(u.message.text.split("\n"))
             if u.message.reply_to_message:
                 reply_to = u.message.reply_to_message.text
                 m = re.match(r'^(\S+:) .*$', reply_to)
@@ -198,7 +220,7 @@ def bridge(u, c):
             client.send(msg)
             client.lastMessageId = u.message.message_id
         if u.edited_message:
-            msg="    ".join(u.edited_message.text.split("\n"))
+            msg = "    ".join(u.edited_message.text.split("\n"))
             client.send(msg)
 
     except:
@@ -207,6 +229,7 @@ def bridge(u, c):
             del users[c.user_data['id']]
         except:
             pass
+
 
 def button(u, c):
     query = u.callback_query
@@ -232,36 +255,39 @@ def button(u, c):
     if data.startswith("load_"):
         name = args[-1]
         client = c.user_data['saved'][name]
-        send(c,u,str(client))
-        ircJoin(u, c, client['host'], client['port'], client['channel'], client['name'], c.user_data['id'], password=client['password'], ssl=client['ssl'])
+        send(c, u, str(client))
+        ircJoin(u, c, client['host'], client['port'], client['channel'], client['name'],
+                c.user_data['id'], password=client['password'], ssl=client['ssl'])
 
 
-def image_handler(u,c):
+def image_handler(u, c):
     if not c.user_data['id'] in users:
         send(c, u, "You are not connected to any irc")
         return
-    msg=u.message
+    msg = u.message
     if msg.photo:
-        file_id=msg.photo[-1].file_id
+        file_id = msg.photo[-1].file_id
     else:
         logging.info("Wrong photo data")
         return
 
     newFile = c.bot.get_file(file_id)
-    filename="/tmp/"+file_id
+    filename = "/tmp/"+file_id
     newFile.download(filename)
 
     im = pyimgur.Imgur(CLIENT_ID)
-    uploaded_image = im.upload_image(filename, title=u.message.text if hasattr(u.message, "text") else "Uploaded by https://t.me/ircclientbot")
+    uploaded_image = im.upload_image(filename, title=u.message.text if hasattr(
+        u.message, "text") else "Uploaded by https://t.me/ircclientbot")
     logging.info("Uploaded image")
 
     client = users[c.user_data['id']]
-    send(c,u,uploaded_image.link)
+    send(c, u, uploaded_image.link)
     if "imgurls" not in c.user_data:
         c.user_data["imgurls"] = TTLCache(maxsize=128, ttl=172800)
     iid = uploaded_image.id
     c.user_data["imgurls"][iid] = uploaded_image
     client.send(uploaded_image.link)
+
 
 def image_delete(u, c):
     logging.error("Is this even called")
@@ -272,7 +298,8 @@ def image_delete(u, c):
     url = args[0]
     iid = url.split("/")[-1].split(".")[0]
     if "imgurls" not in c.user_data or iid not in c.user_data["imgurls"]:
-        u.message.reply_text("I am sorry but you either have sent no message, that is an invalid url/id or your image is past the 48 hours limit")
+        u.message.reply_text(
+            "I am sorry but you either have sent no message, that is an invalid url/id or your image is past the 48 hours limit")
         return
     try:
         c.user_data["imgurls"][iid].delete()
@@ -280,13 +307,16 @@ def image_delete(u, c):
         u.message.reply_text("Image deleted successfully!")
     except Exception as e:
         logging.error(e)
-        u.message.reply_text("Sorry, something went wrong trying to delete that :(")
+        u.message.reply_text(
+            "Sorry, something went wrong trying to delete that :(")
+
 
 def upload_file(file):
     url = "http://ttm.sh"
     payload = {'file': open(file, "rb")}
     response = requests.request("POST", url, files=payload)
     return response.text.strip()
+
 
 def document_handler(u, c):
     if not c.user_data['id'] in users:
@@ -314,10 +344,11 @@ def document_handler(u, c):
 
     if file:
         if file.file_size > 256 * 1024 * 1000:
-            msg.reply_text("Sorry but your file is too big and can't be uploaded. The limit is 256 mb.")
+            msg.reply_text(
+                "Sorry but your file is too big and can't be uploaded. The limit is 256 mb.")
             return
         with tempfile.NamedTemporaryFile(suffix="." + filename.split(".")[-1]) as f:
-        # with open("/tmp/checkthis.ico", "wb") as f:
+            # with open("/tmp/checkthis.ico", "wb") as f:
             file.download(out=f)
             logging.info("Downloaded to: " + f.name)
             url = upload_file(f.name)

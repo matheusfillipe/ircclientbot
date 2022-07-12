@@ -15,6 +15,7 @@ commands_dict = [
     {"cmd": "status", "func": stats, "desc": "Your current connection information."},
     {"cmd": "save", "func": save, "desc": "Save your current channel and server as a name"},
     {"cmd": "load", "func": load, "desc": "Loads saved channel"},
+    {"cmd": "del", "func": delete, "desc": "Deletes a saved channel"},
     {"cmd": "part", "func": lambda u, c: ircDisconnect(c), "desc": "Disconects from server"},
 ]
 
